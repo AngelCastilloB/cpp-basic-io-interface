@@ -3,7 +3,7 @@
 #include <Display/IFrameRenderer.h>
 #include <Display/IInputHandler.h>
 
-class Application: public Bgi::IFrameRenderer, public Bgi::IInputHandler
+class Application: public Bio::IFrameRenderer, public Bio::IInputHandler
 {
     /**
      * Renders the image on the buffer.
@@ -24,9 +24,9 @@ class Application: public Bgi::IFrameRenderer, public Bgi::IInputHandler
 
 int main(int, char**)
 {
-   Bgi::DisplayParams params = { 500, 500, false, false };
+   Bio::DisplayParams params = { 500, 500, false, false };
 
    Application* application = new Application();
-   Bgi::Display display(application, application, params);
+   Bio::Display display(application, application, params);
    display.start();
 }

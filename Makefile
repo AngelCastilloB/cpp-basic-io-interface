@@ -6,17 +6,17 @@
 # Use of this software is subject to the terms of an end user license agreement.
 #
 
-PROGRAM = gdi-sample
+PROGRAM = bio-sample
 
 CC        = g++
 CFLAGS    = -g -std=c++11 -Wall -Wextra -Werror
 LIBS      = -L.  -lgdiplus -mwindows
-INCLUDING = -I./include/Bgi
+INCLUDING = -I./include/Bio
 
-all: gdi-sample
+all: bio-sample
 
-gdi-sample: main.o  Display.o
-	$(CC) -o gdi-sample main.o Display.o $(LIBS)
+bio-sample: main.o  Display.o
+	$(CC) -o bio-sample main.o Display.o $(LIBS)
 
 main.o: main.cpp 
 	$(CC) $(CFLAGS) $(INCLUDING) -c main.cpp

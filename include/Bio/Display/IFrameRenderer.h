@@ -14,8 +14,8 @@
  * limitations under the License.
  **/
 
-#ifndef BGI_IFRAMERENDERER_H
-#define BGI_IFRAMERENDERER_H
+#ifndef BIO_IFRAMERENDERER_H
+#define BIO_IFRAMERENDERER_H
 
 /* INCLUDES ******************************************************************/
 
@@ -23,7 +23,7 @@
 
 /* CLASS DECLARATION *********************************************************/
 
-namespace Bgi
+namespace Bio
 {
 
 /**
@@ -51,6 +51,6 @@ class IFrameRenderer
     virtual void render(char* buffer, unsigned int width, unsigned int height, unsigned char channels) = 0;
 };
 
-} /* namespace Bgi */
+} /* namespace Bio */
 
-#endif //BGI_IFRAMERENDERER_H
+#endif //BIO_IFRAMERENDERER_H

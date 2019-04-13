@@ -104,7 +104,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 /* CLASS IMPLEMENTATION ******************************************************/
 
-namespace Bgi
+namespace Bio
 {
 
 Display::Display(IFrameRenderer *frameRenderer, IInputHandler *inputHandler, DisplayParams params)
@@ -183,4 +183,4 @@ void Display::stop()
 {
   m_isRunning = true;
 }
-} // namespace Bgi
+} // namespace Bio

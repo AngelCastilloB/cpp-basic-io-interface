@@ -14,8 +14,8 @@
  * limitations under the License.
  **/
 
-#ifndef BGI_DISPLAY_H
-#define BGI_DISPLAY_H
+#ifndef BIO_DISPLAY_H
+#define BIO_DISPLAY_H
 
 /* INCLUDES ******************************************************************/
 
@@ -26,7 +26,7 @@
 
 /* CLASS DECLARATION *********************************************************/
 
-namespace Bgi
+namespace Bio
 {
 
 /**
@@ -77,4 +77,4 @@ class Display
 
 } /* namespace Bgi */
 
-#endif //BGI_DISPLAY_H
+#endif //BIO_DISPLAY_H

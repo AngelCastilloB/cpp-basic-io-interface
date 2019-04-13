@@ -14,8 +14,8 @@
  * limitations under the License.
  **/
 
-#ifndef BGI_IINPUTHANDLER_H
-#define BGI_IINPUTHANDLER_H
+#ifndef BIO_DISPLAYPARAMS_H
+#define BIO_DISPLAYPARAMS_H
 
 /* INCLUDES ******************************************************************/
 
@@ -23,31 +23,20 @@
 
 /* CLASS DECLARATION *********************************************************/
 
-namespace Bgi
+namespace Bio
 {
 
 /**
- * Event handler for the user input (keyboard and mouse).
+ * The parameters of the display.
  */
-class IInputHandler
+struct DisplayParams
 {
-  public:
-
-    /**
-     * @brief Finalizes a new instance of the IInputHandler class.
-     */
-    virtual ~IInputHandler() {};
-
-  public:
-
-    /**
-     * Event handler called when an input arrive.
-     * 
-     * @param event The input event.
-     **/
-    virtual void onInput(unsigned int event) = 0;
+    unsigned int width;
+    unsigned int height;
+    bool         isMaximized;
+    bool         removeBorders;
 };
 
-} /* namespace Bgi */
+} /* namespace Bio */
 
-#endif //BGI_IINPUTHANDLER_H
+#endif //BIO_DISPLAYPARAMS_H
