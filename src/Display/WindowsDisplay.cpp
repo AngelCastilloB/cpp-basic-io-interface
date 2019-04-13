@@ -41,13 +41,23 @@ static HINSTANCE g_moduleInstance = GetModuleHandle(0);
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
+/**
+ * On paint event handler.
+ * 
+ * Paints the windows content.
+ * 
+ * @param hdc 
+ **/ 
 VOID OnPaint(HDC hdc)
 {
+  int width = GetSystemMetrics(SM_CXSCREEN);
+  int height = GetSystemMetrics(SM_CYSCREEN);
+
   // create memory DC and memory bitmap where we shall do our drawing
   HDC memDC = CreateCompatibleDC(hdc);
 
   // now we can create bitmap where we shall do our drawing
-  HBITMAP bmp = CreateCompatibleBitmap(hdc, 500, 500);
+  HBITMAP bmp = CreateCompatibleBitmap(hdc, width, height);
   HBITMAP oldBmp = (HBITMAP)SelectObject(memDC, bmp);
 
   /* DRAWING *****************************************************************/
@@ -55,7 +65,7 @@ VOID OnPaint(HDC hdc)
   Gdiplus::Graphics graphics(memDC);
   Gdiplus::Pen pen(Gdiplus::Color(255, 0, 0, 255));
 
-  RECT rect = {0, 0, 500, 500};
+  RECT rect = {0, 0, width, height};
   FillRect(memDC, &rect, (HBRUSH)(COLOR_WINDOW + 1));
   
   graphics.DrawLine(&pen, 0, 0, 200, 100);
@@ -65,13 +75,13 @@ VOID OnPaint(HDC hdc)
   Gdiplus::Font font(&fontFamily, 24, Gdiplus::FontStyleRegular, Gdiplus::UnitPixel);
   Gdiplus::PointF pointF(counter, 20.0f);
 
-  counter += 0.1f;
+  counter += 0.9f;
   graphics.DrawString(L"Hello World!", -1, &font, pointF, &brush);
   std::cout << "Updated" << std::endl;
   
   /* END RAWING **************************************************************/
 	
-  BitBlt(hdc, 0, 0, 500, 500, memDC, 0, 0, SRCCOPY);
+  BitBlt(hdc, 0, 0, width, height, memDC, 0, 0, SRCCOPY);
   
   // all done, now we need to cleanup
   SelectObject(memDC, oldBmp); // select back original bitmap
@@ -102,13 +112,27 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
   }
 }
 
+/**
+ * Sets the window to full screen.
+ * 
+ * @param hWnd The window handle.
+ **/
+static void
+setFullScreen(HWND hWnd)
+{
+  LONG lStyle = GetWindowLong( hWnd, GWL_STYLE );
+  lStyle &= ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZE | WS_MAXIMIZE | WS_SYSMENU);
+  SetWindowLong(hWnd, GWL_STYLE, lStyle);
+  SetWindowPos(hWnd, HWND_TOP, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+}
+  
 /* CLASS IMPLEMENTATION ******************************************************/
 
 namespace Bio
 {
 
 Display::Display(IFrameRenderer *frameRenderer, IInputHandler *inputHandler, DisplayParams params)
-    : m_frameRenderer(frameRenderer), m_inputHandler(inputHandler), m_params(params), m_height(params.height), m_width(params.width), m_isRunning(false)
+: m_frameRenderer(frameRenderer), m_inputHandler(inputHandler), m_params(params), m_height(params.height), m_width(params.width), m_isRunning(false)
 {
 }
 
@@ -145,27 +169,18 @@ void Display::start()
       TEXT("GettingStarted"),  // window class name
       TEXT("Getting Started"), // window caption
       WS_OVERLAPPEDWINDOW,     // window style
-      CW_USEDEFAULT,           // initial x position
-      CW_USEDEFAULT,           // initial y position
-      m_params.width,          // initial x size
+      m_params.x < 0 ? CW_USEDEFAULT : m_params.x,           // initial y position
+      m_params.y < 0 ? CW_USEDEFAULT : m_params.y,          // initial x size
+      m_params.width,         // initial y size
       m_params.height,         // initial y size
       NULL,                    // parent window handle
       NULL,                    // window menu handle
       g_moduleInstance,        // program instance handle
       NULL);
 
-  // remove title bar
-  /*
-    LONG lStyle = GetWindowLong(hWnd, GWL_STYLE);
-    lStyle &= ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU);
-    SetWindowLong(hWnd, GWL_STYLE, lStyle);
-    ShowScrollBar(hWnd, SB_VERT, FALSE);*/
+  if (m_params.isMaximized)
+    setFullScreen(hWnd);
 
-  // creation parameters
-  //1 normal: Activates and displays a window. If the window is minimized or maximized, the system restores it to its original size and position. An application should specify this flag when displaying the window for the first time.
-
-  // 2 minimized: Activates the window and displays it as a minimized window.
-  // 3 maximized: Activates the window and displays it as a maximized window.
   ShowWindow(hWnd, 4);
   UpdateWindow(hWnd);
 

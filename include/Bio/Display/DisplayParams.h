@@ -21,6 +21,10 @@
 
 #include <memory>
 
+/* DEFINES *******************************************************************/
+
+constexpr int DEFAULT_POSITION = -1;
+
 /* CLASS DECLARATION *********************************************************/
 
 namespace Bio
@@ -33,8 +37,9 @@ struct DisplayParams
 {
     unsigned int width;
     unsigned int height;
+    int          x;
+    int          y;
     bool         isMaximized;
-    bool         removeBorders;
 };
 
 } /* namespace Bio */
