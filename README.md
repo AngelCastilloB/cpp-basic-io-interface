@@ -9,7 +9,7 @@ Build
 
 For the time being the project uses a simple Makefile, I will migrate it to CMake once the project is more mature.
 
-To build manually, create the executable with:
+To build manually:
 
 ```sh
  make
