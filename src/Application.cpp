@@ -15,7 +15,7 @@
  **/
 
 #if defined(_WIN32) || defined(_WIN64) || (defined(__CYGWIN__) && !defined(_WIN32))
-    #include "./WindowsDisplay.cpp"
+    #include "./WindowsApplication.cpp"
 #elif defined(__linux__) ||defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
-    #include "./UnixDisplay.cpp"
+    #include "./UnixApplication.cpp"
 #endif

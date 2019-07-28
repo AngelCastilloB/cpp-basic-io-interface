@@ -17,10 +17,10 @@
 /* INCLUDES ******************************************************************/
 
 #ifdef HAVE_CONFIG_H
-#include "../config.h"
+#include "config.h"
 #endif
 
-#include <Display/Display.h>
+#include <Bio/Application.h>
 
 #include <windows.h>
 #include <objidl.h>
@@ -131,26 +131,25 @@ setFullScreen(HWND hWnd)
 namespace Bio
 {
 
-Display::Display(IFrameRenderer *frameRenderer, IInputHandler *inputHandler, DisplayParams params)
-: m_frameRenderer(frameRenderer), m_inputHandler(inputHandler), m_params(params), m_height(params.height), m_width(params.width), m_isRunning(false)
+Application::Application(DisplayParams params)
+: m_params(params), m_height(params.height), m_width(params.width), m_context(NULL)
 {
 }
 
-Display::~Display()
+Application::~Application()
 {
+    Gdiplus::GdiplusShutdown(reinterpret_cast<ULONG_PTR>(m_context));
 }
 
-void Display::start()
+bool
+Application::initialize()
 {
-  m_isRunning = true;
-  HWND hWnd;
-  MSG msg;
+  HWND hwnd;
   WNDCLASS wndClass;
   Gdiplus::GdiplusStartupInput gdiplusStartupInput;
-  ULONG_PTR gdiplusToken;
 
   // Initialize GDI+.
-  Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
+  Gdiplus::GdiplusStartup(reinterpret_cast<ULONG_PTR*>(&m_context), &gdiplusStartupInput, NULL);
 
   wndClass.style = CS_HREDRAW | CS_VREDRAW;
   wndClass.lpfnWndProc = WndProc;
@@ -165,7 +164,7 @@ void Display::start()
 
   RegisterClass(&wndClass);
 
-  hWnd = CreateWindow(
+  hwnd = CreateWindow(
       TEXT("GettingStarted"),  // window class name
       TEXT("Getting Started"), // window caption
       WS_OVERLAPPEDWINDOW,     // window style
@@ -179,23 +178,75 @@ void Display::start()
       NULL);
 
   if (m_params.isMaximized)
-    setFullScreen(hWnd);
+    setFullScreen(hwnd);
 
-  ShowWindow(hWnd, 4);
-  UpdateWindow(hWnd);
+  ShowWindow(hwnd, 4);
+  UpdateWindow(hwnd);
 
-  while (GetMessage(&msg, NULL, 0, 0) && m_isRunning)
+  m_window = hwnd;
+
+  return true;
+}
+
+void
+Application::render(char*, unsigned int, unsigned int, unsigned char)
+{
+  return;
+}
+
+bool
+Application::hasEvent()
+{
+  return true;
+}
+
+Event
+Application::getEvent()
+{
+  MSG msg;
+  Event event;
+
+  while (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
   {
+    std::cout << "Message" << msg.message  << std::endl;
+
+    GetMessage(&msg, NULL, 0, 0);
     TranslateMessage(&msg);
     DispatchMessage(&msg);
-    RedrawWindow(hWnd, NULL, NULL, RDW_INVALIDATE | RDW_ERASE);
+
+    if (msg.message == WM_QUIT)
+    {
+      std::cout << "Exit" << std::endl;
+        event.type = EventType::Quit;
+        event.quitEvent.timestamp = 0;
+        return event;
+    }
+
+    //RedrawWindow((HWND)m_window, NULL, NULL, RDW_INVALIDATE | RDW_ERASE);
   }
 
-  Gdiplus::GdiplusShutdown(gdiplusToken);
+  std::cout << "End message" << std::endl;
+
+  return event;
 }
 
-void Display::stop()
+int
+Application::getEventCount()
 {
-  m_isRunning = true;
+  return 0;
 }
+
+bool
+Application::pushEvent(Event)
+{
+  return true;
+}
+
+Event
+Application::waitForEvent(size_t)
+{
+  Event event;
+  return event;
+}
+
 } // namespace Bio

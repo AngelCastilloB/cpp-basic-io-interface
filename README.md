@@ -12,7 +12,7 @@ For the time being the project uses a simple Makefile, I will migrate it to CMak
 To build manually:
 
 ```sh
- make
+ make clean && make
 ```
 License
 -------

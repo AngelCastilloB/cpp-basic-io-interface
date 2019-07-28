@@ -14,40 +14,29 @@
  * limitations under the License.
  **/
 
-#ifndef BIO_IINPUTHANDLER_H
-#define BIO_IINPUTHANDLER_H
 
-/* INCLUDES ******************************************************************/
+#ifndef BIO_MOUSEBUTTONCODE_H
+#define BIO_MOUSEBUTTONCODE_H
 
-#include <memory>
-
-/* CLASS DECLARATION *********************************************************/
+/* DECLARATION ***************************************************************/
 
 namespace Bio
 {
 
 /**
- * Event handler for the user input (keyboard and mouse).
+ *  The mouse button code.
  */
-class IInputHandler
+enum class MouseButtonCode
 {
-  public:
+   Unknown = 0,
+   Left = 1,
+   Middle = 2,
+   Right = 3,
+   X1 = 4,
+   X2 = 5
 
-    /**
-     * @brief Finalizes a new instance of the IInputHandler class.
-     */
-    virtual ~IInputHandler() {};
-
-  public:
-
-    /**
-     * Event handler called when an input arrive.
-     * 
-     * @param event The input event.
-     **/
-    virtual void onInput(unsigned int event) = 0;
 };
 
-} /* namespace Bio */
+}
 
-#endif //BIO_IINPUTHANDLER_H
+#endif /* BIO_MOUSEBUTTONCODE_H */
