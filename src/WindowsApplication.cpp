@@ -25,13 +25,14 @@
 #include <windows.h>
 #include <objidl.h>
 #include <gdiplus.h>
-#include <iostream>
 #include <sstream>
 #include <string>
 
 /* USINGS ********************************************************************/
 
-/* DEFINES  ******************************************************************/
+/* CONSTANTS  ****************************************************************/
+
+static const char* WINDOWS_CLASS_NAME = "MainWindow";
 
 /* STATIC VARIABLES **********************************************************/
 
@@ -39,20 +40,122 @@ static HINSTANCE g_moduleInstance = GetModuleHandle(0);
 
 /* STATIC FUNCTIONS **********************************************************/
 
-LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+/**
+ * An application-defined function that processes messages sent to a window.
+ * The WNDPROC type defines a pointer to this callback function.
+ * 
+ * @param windowHandler A handle to the window.
+ * @param message       The message. For lists of the system-provided messages, see @link https://docs.microsoft.com/en-us/windows/win32/winmsg/about-messages-and-message-queues
+ * @param wParam        Additional message information. The contents of this parameter depend on the value of the uMsg parameter..
+ * @param lParam        Additional message information. The contents of this parameter depend on the value of the uMsg parameter.
+ * 
+ * @return The return value is the result of the message processing and depends on the message sent.
+ */
+LRESULT CALLBACK WndProc(HWND windowHandler, UINT message, WPARAM wParam, LPARAM lParam)
+{
+  PAINTSTRUCT ps;
+
+  switch (message)
+  {
+    case WM_PAINT:
+      // draw nothing here. drawing happens in the render() function that
+      // we MANUALLY call ourselves.
+      BeginPaint(windowHandler, &ps);
+      EndPaint(windowHandler, &ps);
+      return 0;
+    case WM_DESTROY:
+      PostQuitMessage(0);
+      return 0;
+    case WM_ERASEBKGND:
+      return 1;
+    default:
+      return DefWindowProc(windowHandler, message, wParam, lParam);
+  }
+}
 
 /**
- * On paint event handler.
+ * Sets the window to full screen.
  * 
- * Paints the windows content.
- * 
- * @param hdc 
- **/ 
-VOID OnPaint(HDC hdc)
+ * @param windowHandler The window handle.
+ **/
+static void
+setFullScreen(HWND windowHandler)
+{
+  LONG style = GetWindowLong(windowHandler, GWL_STYLE);
+  style &= ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZE | WS_MAXIMIZE | WS_SYSMENU);
+
+  SetWindowLong(windowHandler, GWL_STYLE, style);
+  SetWindowPos(windowHandler, HWND_TOP, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+}
+  
+/* CLASS IMPLEMENTATION ******************************************************/
+
+namespace Bio
+{
+
+Application::Application(DisplayParams params)
+: m_params(params), m_height(params.height), m_width(params.width), m_context(NULL)
+{
+}
+
+Application::~Application()
+{
+  Gdiplus::GdiplusShutdown(reinterpret_cast<ULONG_PTR>(m_context));
+}
+
+bool
+Application::initialize()
+{
+  HWND windowHandler;
+  WNDCLASS windowClass;
+  Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+
+  Gdiplus::GdiplusStartup(reinterpret_cast<ULONG_PTR*>(&m_context), &gdiplusStartupInput, NULL);
+
+  windowClass.style         = CS_HREDRAW | CS_VREDRAW;
+  windowClass.lpfnWndProc   = WndProc;
+  windowClass.cbClsExtra    = 0;
+  windowClass.cbWndExtra    = 0;
+  windowClass.hInstance     = g_moduleInstance;
+  windowClass.hIcon         = LoadIcon(NULL, IDI_APPLICATION);
+  windowClass.hCursor       = LoadCursor(NULL, IDC_ARROW);
+  windowClass.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
+  windowClass.lpszMenuName  = NULL;
+  windowClass.lpszClassName = TEXT(WINDOWS_CLASS_NAME);
+
+  RegisterClass(&windowClass);
+
+  windowHandler = CreateWindow(
+      TEXT(WINDOWS_CLASS_NAME),
+      TEXT(m_params.title.c_str()),
+      WS_OVERLAPPEDWINDOW,
+      m_params.x < 0 ? CW_USEDEFAULT : m_params.x,
+      m_params.y < 0 ? CW_USEDEFAULT : m_params.y,
+      m_params.width,
+      m_params.height,
+      NULL,
+      NULL,
+      g_moduleInstance,
+      NULL);
+
+  if (m_params.isMaximized)
+    setFullScreen((HWND)windowHandler);
+
+  ShowWindow(windowHandler, 4);
+  UpdateWindow(windowHandler);
+
+  m_window = windowHandler;
+
+  return true;
+}
+
+void
+Application::render(char*, unsigned int, unsigned int, unsigned char)
 {
   int width = GetSystemMetrics(SM_CXSCREEN);
   int height = GetSystemMetrics(SM_CYSCREEN);
 
+  HDC hdc = GetDC((HWND)m_window);
   // create memory DC and memory bitmap where we shall do our drawing
   HDC memDC = CreateCompatibleDC(hdc);
 
@@ -77,7 +180,6 @@ VOID OnPaint(HDC hdc)
 
   counter += 0.9f;
   graphics.DrawString(L"Hello World!", -1, &font, pointF, &brush);
-  std::cout << "Updated" << std::endl;
   
   /* END RAWING **************************************************************/
 	
@@ -89,164 +191,32 @@ VOID OnPaint(HDC hdc)
   DeleteDC(memDC);   // delete memory DC since it is no longer required
 }
 
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-  HDC hdc;
-  PAINTSTRUCT ps;
-
-  switch (message)
-  {
-  case WM_PAINT:
-    hdc = BeginPaint(hWnd, &ps);
-    OnPaint(hdc);
-    EndPaint(hWnd, &ps);
-    return 0;
-  case WM_DESTROY:
-    PostQuitMessage(0);
-    return 0;
-  case WM_ERASEBKGND:
-    return 1;
-
-  default:
-    return DefWindowProc(hWnd, message, wParam, lParam);
-  }
-}
-
-/**
- * Sets the window to full screen.
- * 
- * @param hWnd The window handle.
- **/
-static void
-setFullScreen(HWND hWnd)
-{
-  LONG lStyle = GetWindowLong( hWnd, GWL_STYLE );
-  lStyle &= ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZE | WS_MAXIMIZE | WS_SYSMENU);
-  SetWindowLong(hWnd, GWL_STYLE, lStyle);
-  SetWindowPos(hWnd, HWND_TOP, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), SWP_FRAMECHANGED | SWP_SHOWWINDOW);
-}
-  
-/* CLASS IMPLEMENTATION ******************************************************/
-
-namespace Bio
-{
-
-Application::Application(DisplayParams params)
-: m_params(params), m_height(params.height), m_width(params.width), m_context(NULL)
-{
-}
-
-Application::~Application()
-{
-    Gdiplus::GdiplusShutdown(reinterpret_cast<ULONG_PTR>(m_context));
-}
-
-bool
-Application::initialize()
-{
-  HWND hwnd;
-  WNDCLASS wndClass;
-  Gdiplus::GdiplusStartupInput gdiplusStartupInput;
-
-  // Initialize GDI+.
-  Gdiplus::GdiplusStartup(reinterpret_cast<ULONG_PTR*>(&m_context), &gdiplusStartupInput, NULL);
-
-  wndClass.style = CS_HREDRAW | CS_VREDRAW;
-  wndClass.lpfnWndProc = WndProc;
-  wndClass.cbClsExtra = 0;
-  wndClass.cbWndExtra = 0;
-  wndClass.hInstance = g_moduleInstance;
-  wndClass.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-  wndClass.hCursor = LoadCursor(NULL, IDC_ARROW);
-  wndClass.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
-  wndClass.lpszMenuName = NULL;
-  wndClass.lpszClassName = TEXT("GettingStarted");
-
-  RegisterClass(&wndClass);
-
-  hwnd = CreateWindow(
-      TEXT("GettingStarted"),  // window class name
-      TEXT("Getting Started"), // window caption
-      WS_OVERLAPPEDWINDOW,     // window style
-      m_params.x < 0 ? CW_USEDEFAULT : m_params.x,           // initial y position
-      m_params.y < 0 ? CW_USEDEFAULT : m_params.y,          // initial x size
-      m_params.width,         // initial y size
-      m_params.height,         // initial y size
-      NULL,                    // parent window handle
-      NULL,                    // window menu handle
-      g_moduleInstance,        // program instance handle
-      NULL);
-
-  if (m_params.isMaximized)
-    setFullScreen(hwnd);
-
-  ShowWindow(hwnd, 4);
-  UpdateWindow(hwnd);
-
-  m_window = hwnd;
-
-  return true;
-}
-
-void
-Application::render(char*, unsigned int, unsigned int, unsigned char)
-{
-  return;
-}
-
-bool
-Application::hasEvent()
-{
-  return true;
-}
-
 Event
 Application::getEvent()
 {
   MSG msg;
   Event event;
 
-  while (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
+  while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
   {
-    std::cout << "Message" << msg.message  << std::endl;
-
-    GetMessage(&msg, NULL, 0, 0);
     TranslateMessage(&msg);
     DispatchMessage(&msg);
 
     if (msg.message == WM_QUIT)
     {
-      std::cout << "Exit" << std::endl;
         event.type = EventType::Quit;
         event.quitEvent.timestamp = 0;
         return event;
     }
-
-    //RedrawWindow((HWND)m_window, NULL, NULL, RDW_INVALIDATE | RDW_ERASE);
   }
 
-  std::cout << "End message" << std::endl;
-
   return event;
-}
-
-int
-Application::getEventCount()
-{
-  return 0;
 }
 
 bool
 Application::pushEvent(Event)
 {
   return true;
-}
-
-Event
-Application::waitForEvent(size_t)
-{
-  Event event;
-  return event;
 }
 
 } // namespace Bio

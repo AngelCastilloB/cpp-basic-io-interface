@@ -2,21 +2,15 @@
 
 int main(int, char**)
 {
-    Bio::DisplayParams params = { 500, 500, 0, 0, false };
+    Bio::DisplayParams params = { 500, 500, 500, 100, false, "My first Test" };
     Bio::Application app(params);
 
     app.initialize();
 
-    while (app.hasEvent())
+    Bio::Event event = app.getEvent();
+    while (event.type != Bio::EventType::Quit)
     {
-        Bio::Event event = app.getEvent();
-        if (event.type == Bio::EventType::Quit)
-            break;
+        app.render(NULL, 0, 0, 0);
+        event = app.getEvent();
     }
-
-   //Bio::DisplayParams params = { 500, 500, 0, 0, false };
-
-   //Application* application = new Application();
-   //Bio::Display display(application, application, params);
-   //display.start();
 }

@@ -70,13 +70,6 @@ class Application
     void render(char* buffer, unsigned int width, unsigned int height, unsigned char channels);
 
     /**
-     * Gets whether there are events to be processesd in the event queue.
-     * 
-     * @return true if there are events pending; otherwise; false.
-     */
-    bool hasEvent();
-
-    /**
      * Gets the next event in the event queue.
      * 
      * @return Event The next event in the queue.
@@ -87,13 +80,6 @@ class Application
     Event getEvent();
 
     /**
-     * Gets the current number of events in the queue.
-     * 
-     * @return The number of event currently in the event queue.
-     */
-    int getEventCount();
-
-    /**
      * Pushes an event to the event queue.
      * 
      * @param event The event to be added to the event queue.
@@ -101,20 +87,6 @@ class Application
      * @return true if the event was added; otherwise; false.
      */
     bool pushEvent(Event event);
-
-    /**
-     * Waits until there is an event in the queue. If the queue is not empty it will return immediatly
-     * with the next event in the queue. Otherwise it will wait until a new event is added to the queue.
-     * 
-     * @param timeout The time (in milliseconds) the function will block until a new event is added to the queue.
-     *                If the timeout value is 0 (zero) this function will block indefinetly until a new event arrives.
-     * 
-     * @return Event  The new event.
-     * 
-     * @remark if a timeout different than 0 (zero) is set, and no event arrives after the timout expires, the function will return a NULL
-     *         event.
-     */
-    Event waitForEvent(size_t timeout = 0);
 
   private:
 

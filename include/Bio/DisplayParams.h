@@ -40,6 +40,7 @@ struct DisplayParams
     int          x;
     int          y;
     bool         isMaximized;
+    std::string  title;
 };
 
 } /* namespace Bio */
