@@ -32,7 +32,14 @@
 
 /* CONSTANTS  ****************************************************************/
 
-static const char* WINDOWS_CLASS_NAME = "MainWindow";
+static const char* WINDOWS_CLASS_NAME  = "MainWindow";
+static const int   IMAGE_CHANNELS      = 3;
+static const int   IMAGE_INITIAL_VALUE = 0;
+static const int   RED_CHANNEL_INDEX   = 0;
+static const int   GREEN_CHANNEL_INDEX = 1;
+static const int   BLUE_CHANNEL_INDEX  = 2;
+static const int   PLANES_COUNT        = 1;
+static const int   PIXEL_SIZE_IN_BITS  = 32;
 
 /* STATIC VARIABLES **********************************************************/
 
@@ -72,6 +79,25 @@ LRESULT CALLBACK WndProc(HWND windowHandler, UINT message, WPARAM wParam, LPARAM
       return DefWindowProc(windowHandler, message, wParam, lParam);
   }
 }
+
+/**
+ * Converts a byte array of pixels into a color ref collection.
+ */
+static std::vector<COLORREF>
+toColorRef(char* data, unsigned int width, unsigned int height)
+{
+    std::vector<COLORREF> colorRef(width * height, IMAGE_INITIAL_VALUE);
+
+    size_t colorRefIndex = 0;
+    for (size_t i = 0; i < (width * height * 3); i += IMAGE_CHANNELS)
+    {
+      // For some reason the channels are inverted, so we must pass blue first and red last.
+      colorRef[colorRefIndex] = RGB(data[i + BLUE_CHANNEL_INDEX], data[i + GREEN_CHANNEL_INDEX], data[i + RED_CHANNEL_INDEX]);
+      ++colorRefIndex;
+    }
+
+    return colorRef;
+  }
 
 /**
  * Sets the window to full screen.
@@ -150,45 +176,21 @@ Application::initialize()
 }
 
 void
-Application::render(char*, unsigned int, unsigned int, unsigned char)
-{
-  int width = GetSystemMetrics(SM_CXSCREEN);
-  int height = GetSystemMetrics(SM_CYSCREEN);
-
+Application::render(char* data, unsigned int width, unsigned int height)
+{   
   HDC hdc = GetDC((HWND)m_window);
-  // create memory DC and memory bitmap where we shall do our drawing
-  HDC memDC = CreateCompatibleDC(hdc);
 
-  // now we can create bitmap where we shall do our drawing
-  HBITMAP bmp = CreateCompatibleBitmap(hdc, width, height);
-  HBITMAP oldBmp = (HBITMAP)SelectObject(memDC, bmp);
+  std::vector<COLORREF> colors = toColorRef(data, width, height);
 
-  /* DRAWING *****************************************************************/
-  static float counter = 10.0f;
-  Gdiplus::Graphics graphics(memDC);
-  Gdiplus::Pen pen(Gdiplus::Color(255, 0, 0, 255));
+  HBITMAP map = CreateBitmap(width, height, PLANES_COUNT, PIXEL_SIZE_IN_BITS, reinterpret_cast<void*>(&colors[0]));
 
-  RECT rect = {0, 0, width, height};
-  FillRect(memDC, &rect, (HBRUSH)(COLOR_WINDOW + 1));
-  
-  graphics.DrawLine(&pen, 0, 0, 200, 100);
+  HDC src = CreateCompatibleDC(hdc);
+  SelectObject(src, map);
 
-  Gdiplus::SolidBrush brush(Gdiplus::Color(255, 0, 0, 255));
-  Gdiplus::FontFamily fontFamily(L"Times New Roman");
-  Gdiplus::Font font(&fontFamily, 24, Gdiplus::FontStyleRegular, Gdiplus::UnitPixel);
-  Gdiplus::PointF pointF(counter, 20.0f);
+  BitBlt(hdc, 0, 0, width, height, src, 0, 0, SRCCOPY);
 
-  counter += 0.9f;
-  graphics.DrawString(L"Hello World!", -1, &font, pointF, &brush);
-  
-  /* END RAWING **************************************************************/
-	
-  BitBlt(hdc, 0, 0, width, height, memDC, 0, 0, SRCCOPY);
-  
-  // all done, now we need to cleanup
-  SelectObject(memDC, oldBmp); // select back original bitmap
-  DeleteObject(bmp); // delete bitmap since it is no longer required
-  DeleteDC(memDC);   // delete memory DC since it is no longer required
+  DeleteObject(map);
+  DeleteDC(src);
 }
 
 Event
@@ -207,6 +209,15 @@ Application::getEvent()
         event.type = EventType::Quit;
         event.quitEvent.timestamp = 0;
         return event;
+      }
+      
+    if (msg.message == WM_KEYDOWN)
+    {
+      event.type = EventType::Keyboard;
+      event.keyboardEvent.timestamp = 0;
+      event.keyboardEvent.code = static_cast<KeyCode>(msg.wParam);
+      event.keyboardEvent.wasPressed = true;
+      return event;
     }
   }
 

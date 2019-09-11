@@ -67,7 +67,7 @@ class Application
      * @param height The height of the image to be rendered.
      * @param channels The number of channels for each pixel.
      **/
-    void render(char* buffer, unsigned int width, unsigned int height, unsigned char channels);
+    void render(char* buffer, unsigned int width, unsigned int height);
 
     /**
      * Gets the next event in the event queue.
