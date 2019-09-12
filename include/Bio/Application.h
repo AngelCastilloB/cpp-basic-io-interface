@@ -21,6 +21,7 @@
 
 #include <memory>
 #include <queue>
+#include <set>
 
 #include <Bio/DisplayParams.h>
 #include <Bio/Events/Event.h>
@@ -65,7 +66,6 @@ class Application
      * @param buffer The buffer where to render the image.
      * @param width  The width of the image to be rendered.
      * @param height The height of the image to be rendered.
-     * @param channels The number of channels for each pixel.
      **/
     void render(char* buffer, unsigned int width, unsigned int height);
 
@@ -88,6 +88,13 @@ class Application
      */
     bool pushEvent(Event event);
 
+    /**
+     * Gets whther the given key is in a pressed state.
+     * 
+     * @return true if the key is pressed; otherwise; false.
+     */
+    bool isKeyPressed(KeyCode code);
+
   private:
 
     DisplayParams     m_params;
@@ -96,6 +103,7 @@ class Application
     void*             m_context;
     void*             m_window;
     std::queue<Event> m_eventQueue;
+    std::set<KeyCode> m_keyState;
 };
 
 } /* namespace Bio */

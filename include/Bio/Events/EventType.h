@@ -55,7 +55,12 @@ enum class EventType
     /**
      * Custom event created by the user.
      */
-    Custom
+    Custom,
+
+    /**
+     * The event queue was empty.
+     */
+    None
 };
 
 }

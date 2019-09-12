@@ -27,6 +27,13 @@
 #include <gdiplus.h>
 #include <sstream>
 #include <string>
+#include <stdio.h>
+#include <fcntl.h>
+#include <io.h>
+#include <iostream>
+#include <fstream>
+#include <stdlib.h>
+#include <share.h>
 
 /* USINGS ********************************************************************/
 
@@ -40,6 +47,12 @@ static const int   GREEN_CHANNEL_INDEX = 1;
 static const int   BLUE_CHANNEL_INDEX  = 2;
 static const int   PLANES_COUNT        = 1;
 static const int   PIXEL_SIZE_IN_BITS  = 32;
+
+static const WORD MAX_CONSOLE_LINES = 500;
+
+/* DEFINES *******************************************************************/
+
+#define BIO_DEBUG 1
 
 /* STATIC VARIABLES **********************************************************/
 
@@ -113,7 +126,62 @@ setFullScreen(HWND windowHandler)
   SetWindowLong(windowHandler, GWL_STYLE, style);
   SetWindowPos(windowHandler, HWND_TOP, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), SWP_FRAMECHANGED | SWP_SHOWWINDOW);
 }
-  
+
+/**
+ * Redirects cout, wcout, cin, wcin, wcerr, cerr, wclog and clog to the console.
+ */ 
+#ifdef BIO_DEBUG
+static void
+redirectIoToConsole()
+{
+  int  hConHandle = 0;
+  long lStdHandle = 0;
+
+  CONSOLE_SCREEN_BUFFER_INFO coninfo = { {0, 0}, {0, 0},  0, {0, 0, 0, 0}, {0, 0} };
+
+  FILE* fp = NULL;;
+
+  AllocConsole();
+
+  GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &coninfo);
+
+  coninfo.dwSize.Y = MAX_CONSOLE_LINES;
+
+  SetConsoleScreenBufferSize(GetStdHandle(STD_OUTPUT_HANDLE),coninfo.dwSize);
+
+  lStdHandle = (long)GetStdHandle(STD_OUTPUT_HANDLE);
+  hConHandle = _open_osfhandle(lStdHandle, _O_TEXT);
+
+  fp = _fdopen(hConHandle, "w");
+
+  *stdout = *fp;
+
+  setvbuf(stdout, NULL, _IONBF, 0 );
+
+  lStdHandle = (long)GetStdHandle(STD_INPUT_HANDLE);
+
+  hConHandle = _open_osfhandle(lStdHandle, _O_TEXT);
+
+  fp = _fdopen(hConHandle, "r");
+
+  *stdin = *fp;
+
+  setvbuf( stdin, NULL, _IONBF, 0 );
+
+  lStdHandle = (long)GetStdHandle(STD_ERROR_HANDLE);
+
+  hConHandle = _open_osfhandle(lStdHandle, _O_TEXT);
+
+  fp = _fdopen(hConHandle, "w");
+
+  *stderr = *fp;
+
+  setvbuf( stderr, NULL, _IONBF, 0 );
+
+  std::ios::sync_with_stdio();
+}
+#endif
+
 /* CLASS IMPLEMENTATION ******************************************************/
 
 namespace Bio
@@ -172,6 +240,10 @@ Application::initialize()
 
   m_window = windowHandler;
 
+  #ifdef BIO_DEBUG
+  redirectIoToConsole();
+  #endif
+
   return true;
 }
 
@@ -199,7 +271,9 @@ Application::getEvent()
   MSG msg;
   Event event;
 
-  while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+  event.type = EventType::None;
+
+  if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
   {
     TranslateMessage(&msg);
     DispatchMessage(&msg);
@@ -217,11 +291,29 @@ Application::getEvent()
       event.keyboardEvent.timestamp = 0;
       event.keyboardEvent.code = static_cast<KeyCode>(msg.wParam);
       event.keyboardEvent.wasPressed = true;
+
+      m_keyState.insert(event.keyboardEvent.code);
+      return event;
+    }
+    else if (msg.message == WM_KEYUP)
+    {
+      event.type = EventType::Keyboard;
+      event.keyboardEvent.timestamp = 0;
+      event.keyboardEvent.code = static_cast<KeyCode>(msg.wParam);
+      event.keyboardEvent.wasPressed = false;
+
+      m_keyState.erase(event.keyboardEvent.code);
       return event;
     }
   }
 
   return event;
+}
+
+bool
+Application::isKeyPressed(KeyCode code)
+{
+  return m_keyState.find(code) != m_keyState.end();
 }
 
 bool

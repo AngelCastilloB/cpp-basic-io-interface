@@ -9,7 +9,7 @@
 PROGRAM = bio-sample
 
 CC        = g++
-CFLAGS    = -g -std=c++11 -Wall -Wextra -Werror
+CFLAGS    = -g -Wall -Wextra -Werror
 LIBS      = -L.  -lgdiplus -mwindows
 INCLUDING = -I./include
 
